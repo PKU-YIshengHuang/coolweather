@@ -70,9 +70,10 @@ public class Utility {
     public static boolean handleCountyResponse(String response, int cityId){
         if(!TextUtils.isEmpty(response)){
             try {
+                // 解析json数组的allCounties
                 JSONArray allCounties = new JSONArray(response);
                 for (int i = 0; i < allCounties.length(); i++) {
-                    JSONObject cityObject = allCounties.getJSONObject(i);
+                    JSONObject cityObject = allCounties.getJSONObject(i); // 得到jsonObject对象
                     County county = new County();
                     county.setCityId(cityObject.getInt("id"));
                     county.setWeatherId(cityObject.getString("weather_id"));
