@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.coolweather.android.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,25 @@ import org.json.JSONObject;
  */
 
 public class Utility {
+
+    /**
+     * 解析成Weather实体类
+     * @param response
+     * @return
+     */
+    public static Weather handleWeatherResponse(String response){
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather");
+            String weatherContent= jsonArray.getJSONObject(0).toString();
+            Weather weather = new Gson().fromJson(weatherContent,Weather.class);
+            return weather;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+
+    }
     /**
      * 解析和返处理服务器返回的省级数据
      * @param response
@@ -73,10 +94,11 @@ public class Utility {
                 // 解析json数组的allCounties
                 JSONArray allCounties = new JSONArray(response);
                 for (int i = 0; i < allCounties.length(); i++) {
-                    JSONObject cityObject = allCounties.getJSONObject(i); // 得到jsonObject对象
+                    JSONObject countyObject = allCounties.getJSONObject(i); // 得到jsonObject对象
                     County county = new County();
-                    county.setCityId(cityObject.getInt("id"));
-                    county.setWeatherId(cityObject.getString("weather_id"));
+                    county.setCountyName(countyObject.getString("name"));
+                    county.setCityId(countyObject.getInt("id"));
+                    county.setWeatherId(countyObject.getString("weather_id"));
                     county.setCityId(cityId);
                     county.save();
                 }

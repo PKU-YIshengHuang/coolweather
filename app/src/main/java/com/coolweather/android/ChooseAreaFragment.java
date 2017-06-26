@@ -1,6 +1,7 @@
 package com.coolweather.android;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -34,7 +35,7 @@ import okhttp3.Response;
 
 public class ChooseAreaFragment extends Fragment {
     private static final int LEVEL_PROVINCE = 0;
-    public static final int LEVEL_CITY = 1;
+    private static final int LEVEL_CITY = 1;
     private static final int LEVEL_COUNTY = 2;
     private TextView titleText;
     private Button backButton;
@@ -52,6 +53,7 @@ public class ChooseAreaFragment extends Fragment {
     private City selectedCity;
     private ProgressDialog progressDialog;
 
+    private static final String TARGET = "ChooseAreaFragment";
 
     @Nullable
     @Override
@@ -70,17 +72,36 @@ public class ChooseAreaFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         // activity和fragment都必须先调用父类的onActivityCreated方法
         super.onActivityCreated(savedInstanceState);
+
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(currentLevel == LEVEL_PROVINCE){
                     selectedProvince = provinceList.get(position);
-
                     queryCities();
-                }
-                if(currentLevel == LEVEL_CITY){
+                    Log.i("ChooseAreaFragment","--------------------------省----------------");
+                }else if(currentLevel == LEVEL_CITY){
                     selectedCity = cityList.get(position);
                     queryCounties();
+                    Log.i("ChooseAreaFragment","--------------------------城市----------------");
+                }else if(currentLevel == LEVEL_COUNTY){
+                    // 如果是mainActivity页面，则跳转到天气页面
+                    String weatherId = countyList.get(position).getWeatherId();
+                    if(getActivity() instanceof MainActivity){
+                        // 当前如果是县级被选中，需要跳转到天气显示活动
+                        Log.i("ChooseAreaFragment","--------------------------跳转----------------");
+                        Intent intent = new Intent(getActivity(),WeatherActivity.class);
+                        intent.putExtra("weather_id",weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }else if(getActivity() instanceof WeatherActivity){
+                        // 是WeatherActivity页面，则直接显示出出来
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.requestWeather(weatherId);
+                    }
+
                 }
             }
         });
@@ -112,8 +133,10 @@ public class ChooseAreaFragment extends Fragment {
                 dataList.add(county.getCountyName()); // 在listView上显示城市的名字
             }
             adapter.notifyDataSetChanged();
+            Log.i("ChooseAreaFragment","--------------------------展示conuty----------------");
             listView.setSelection(0);
             currentLevel = LEVEL_COUNTY;
+            Log.i("ChooseAreaFragment","-----------------currentLevel = LEVEL_COUNTY----------------");
         }else{
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
@@ -198,6 +221,7 @@ public class ChooseAreaFragment extends Fragment {
                 }else if("city".equals(type)){
                     result = Utility.handleCityResponse(responseText,selectedProvince.getId());
                 }else if("county".equals(type)){
+                    Log.i("ChooseAreaFragment","--------------------------解析conuty----------------");
                     result = Utility.handleCountyResponse(responseText,selectedCity.getId());
                 }
 
@@ -211,7 +235,9 @@ public class ChooseAreaFragment extends Fragment {
                             }else if("city".equals(type)){
                                 queryCities();
                             }else if("county".equals(type)){
+                                Log.i("ChooseAreaFragment","--------------------------查询conuty----------------");
                                 queryCounties();
+                                Log.i("ChooseAreaFragment","--------------------------查询conuty完毕----------------");
                             }
                         }
                     });
@@ -231,7 +257,7 @@ public class ChooseAreaFragment extends Fragment {
     private void showProgressDialog() {
         if(progressDialog == null){
             progressDialog = new ProgressDialog(getActivity());
-            progressDialog.setMessage("正在加载......");
+            progressDialog.setMessage("正在加载....尝试。。。..");
             progressDialog.setCancelable(false);
         }
         progressDialog.show();
